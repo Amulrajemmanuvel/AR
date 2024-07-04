@@ -1,0 +1,21 @@
+!pip install powerbiclient
+
+from powerbiclient import QuickVisualize,get_dataset_config,Report
+from powerbiclient.authentication import DeviceCodeLoginAuthentication
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+df =pd.read_excel("/content/New Microsoft Excel Worksheet.xlsx")
+df.head()
+
+pbauthe = DeviceCodeLoginAuthentication()
+
+from google.colab import output
+output.enable_custom_widget_manager()
+
+pbi_QuickVisualize = QuickVisualize(get_dataset_config(df), pbauthe)
+
+pbi_QuickVisualize          
