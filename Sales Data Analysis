@@ -1,0 +1,201 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import io
+
+sales = pd.read_excel(r"C:\Users\USER\Documents\RMPS ECom data\New folder\sales\New Microsoft Excel Worksheet.xlsx")
+sales
+
+#Find sales trends for the top 10 customers over the month
+
+top_customers = sales['Customer'].value_counts().head(10).index
+top_customers_data = sales[sales['Customer'].isin(top_customers)]
+
+top_customers_data['InvoiceDate'] = pd.to_datetime(top_customers_data['InvoiceDate'])
+top_customers_data['Month'] = top_customers_data['InvoiceDate'].dt.to_period('M')
+sales_trends = top_customers_data.groupby(['Customer', 'Month']).size().unstack(fill_value=0)
+
+top_customers
+top_customers_data
+sales_trends
+
+#	Which sales zone has the highest sales
+
+sales_zone_summary = sales.groupby('SalesZone').size().reset_index(name='TotalSales')
+plt.figure(figsize=(10, 6))
+plt.bar(sales_zone_summary['SalesZone'], sales_zone_summary['TotalSales'], color='green')
+plt.xlabel('Sales Zone')
+plt.ylabel('Total Sales')
+plt.title('Total Sales by Sales Zone')
+plt.xticks(rotation=45)
+plt.tight_layout()
+
+# describe top 5 product for every single year in pie chart
+
+top_products_by_year = sales.groupby(['Year', 'MaterialDescription']).size().reset_index(name='TotalSales')
+top_products_by_year = top_products_by_year.groupby('Year').apply(lambda x: x.nlargest(5, 'TotalSales')).reset_index(drop=True)
+years = top_products_by_year['Year'].unique()
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+axes = axes.flatten()
+
+for i, year in enumerate(years):
+    data = top_products_by_year[top_products_by_year['Year'] == year]
+    axes[i].pie(data['TotalSales'], labels=data['MaterialDescription'], autopct='%1.1f%%', startangle=140)
+    axes[i].set_title(f'Top 5 Products in {year}')
+
+plt.tight_layout()
+plt.show()
+
+# Top 5 products which has generated the highest revenue and 5 product which has generated lowest revenue is described for every single year in bar chart.
+
+top_products_by_year = sales.groupby(['Year', 'MaterialDescription']).size().reset_index(name='TotalSales')
+def plot_top_bottom_products(year, data, ax):
+    data_year = data[data['Year'] == year]
+    top_5 = data_year.nlargest(5, 'TotalSales')
+    bottom_5 = data_year.nsmallest(5, 'TotalSales')
+    combined = pd.concat([top_5, bottom_5])
+    colors =  ['green'] * 5 + ['red'] * 5
+    ax.bar(combined['MaterialDescription'], combined['TotalSales'], color=colors)
+    ax.set_title(f'Top 5 and Bottom 5 Products in {year}')
+    ax.set_xlabel('Product')
+    ax.set_ylabel('Total Sales')
+    ax.tick_params(axis='x', rotation=90)
+
+years = [2020, 2021, 2022, 2023]
+
+fig, axes = plt.subplots(len(years), 1, figsize=(14, 8 * len(years)))
+
+for i, year in enumerate(years):
+    plot_top_bottom_products(year, top_products_by_year, axes[i])
+
+plt.tight_layout()
+plt.show()
+
+# The highest ,average and lowest transaction value has been given in descriptive statistic way.
+
+sales['TotalSales'] = sales['InvoiceNo'] 
+highest_transaction = sales['TotalSales'].max()
+lowest_transaction = sales['TotalSales'].min()
+average_transaction = sales['TotalSales'].mean()
+
+print("Highest Transaction Value:", highest_transaction)
+print("Average Transaction Value:", average_transaction)
+print("Lowest Transaction Value:", lowest_transaction)
+
+# Top ten most common billing locations for every single year is described in clustered column chart.
+
+sales['Year'] = pd.DatetimeIndex(sales['InvoiceDate']).year
+billing_locations_by_year = sales.groupby(['Year', 'BillingLocation']).size().reset_index(name='Count')
+top_billing_locations_by_year = billing_locations_by_year.groupby('Year').apply(lambda x: x.nlargest(5, 'Count')).reset_index(drop=True)
+colors = ['skyblue', 'lightgreen', 'lightcoral', 'lightsalmon']
+years = top_billing_locations_by_year['Year'].unique()
+fig, axes = plt.subplots(len(years), 1, figsize=(14, 8 * len(years)))
+for i, year in enumerate(years):
+    data = top_billing_locations_by_year[top_billing_locations_by_year['Year'] == year]
+    axes[i].bar(data['BillingLocation'], data['Count'], color=colors[i % len(colors)])
+    axes[i].set_title(f'Top 5 Most Common Billing Locations in {year}')
+    axes[i].set_xlabel('Billing Location')
+    axes[i].set_ylabel('Count')
+    axes[i].tick_params(axis='x', rotation=90)
+
+plt.tight_layout()
+plt.show()
+
+# Top 5 sales executive based on the total sales value for every single year and described through me in line chart
+
+sales['Year'] = pd.DatetimeIndex(sales['InvoiceDate']).yea
+sales_executive_by_year = sales.groupby(['Year', 'SalesExecutive'])['TotalSales'].sum().reset_index()
+top_sales_executive_by_year = sales_executive_by_year.groupby('Year').apply(lambda x: x.nlargest(5, 'TotalSales')).reset_index(drop=True)
+years = top_sales_executive_by_year['Year'].unique()
+colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown']
+fig, axes = plt.subplots(len(years), 1, figsize=(14, 8 * len(years)))
+
+for i, year in enumerate(years):
+     data = top_sales_executive_by_year[top_sales_executive_by_year['Year'] == year]
+     color = colors[i % len(colors)]
+     axes[i].plot(data['SalesExecutive'], data['TotalSales'], marker='o', linestyle='-', color=color, label=str(year))
+     axes[i].set_title(f'Top 5 Sales Executives Based on Total Sales Value in {year}')
+     axes[i].set_xlabel('Sales Executive')
+     axes[i].set_ylabel('Total Sales Value')
+     axes[i].tick_params(axis='x', rotation=90)
+     axes[i].legend(title='Year')
+     
+    
+     for j in range(len(data)):
+        axes[i].text(data['SalesExecutive'].iloc[j], data['TotalSales'].iloc[j], 
+                     f'{data["TotalSales"].iloc[j]:.2f}', fontsize=9, ha='center')
+
+plt.tight_layout()
+plt.show()
+
+sales['TotalSales'] = sales['InvoiceNo'] 
+sales['Year'] = pd.DatetimeIndex(sales['InvoiceDate']).year
+customer_sales_by_year = sales.groupby(['Year', 'Customer'])['TotalSales'].sum().reset_index()
+top_customers_by_year = customer_sales_by_year.groupby('Year').apply(lambda x: x.nlargest(5, 'TotalSales')).reset_index(drop=True)
+years = top_customers_by_year['Year'].unique()
+fig, axes = plt.subplots(len(years), 1, figsize=(10, 6 * len(years)))
+for i, year in enumerate(years):
+    data = top_customers_by_year[top_customers_by_year['Year'] == year]
+    axes[i].pie(data['TotalSales'], labels=data['Customer'], autopct='%1.1f%%', startangle=140)
+    axes[i].set_title(f'Top 5 Customers Based on Purchase Value in {year}')
+
+plt.tight_layout()
+plt.show()
+
+# The sales trend over a every single year is described through line column chart.
+
+sales['TotalSales'] = sales['InvoiceNo'] 
+sales['Year'] = pd.DatetimeIndex(sales['InvoiceDate']).year
+yearly_sales = sales.groupby('Year')['TotalSales'].sum().reset_index()
+plt.figure(figsize=(10, 6))
+plt.plot(yearly_sales['Year'], yearly_sales['TotalSales'], marker='o', linestyle='-', color='b')
+plt.title('Sales Trend Over the Years')
+plt.xlabel('Year')
+plt.ylabel('Total Sales')
+plt.grid(True)
+plt.show()
+
+# How does the sales performance very across different sales division described in line chart.
+sales['TotalSales'] = sales['InvoiceNo'] 
+def analyze_sales_performance_by_division(sales_df):
+    sales_divisions = sales_df['SalesDivision'].unique()
+
+    for division in sales_divisions:
+        division_data = sales_df[sales_df['SalesDivision'] == division]
+        yearly_sales = division_data.groupby('Year')['TotalSales'].sum().reset_index()
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(yearly_sales['Year'], yearly_sales['TotalSales'], marker='o', linestyle='-', label=division)
+        plt.title(f'Sales Performance for Division: {division}')
+        plt.xlabel('Year')
+        plt.ylabel('Total Sales')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+
+analyze_sales_performance_by_division(sales)
+
+# Yearly sales trend in each plant location for the each year and it is described in bar chart.
+sales['TotalSales'] = sales['InvoiceNo']  
+sales['Year'] = pd.DatetimeIndex(sales['InvoiceDate']).year
+filtered_sales = sales[sales['Year'].isin([2020, 2021, 2022, 2023])]
+yearly_sales_by_plant = filtered_sales.groupby(['Year', 'Plant'])['TotalSales'].sum().reset_index()
+
+def plot_yearly_sales_trend_by_plant(sales_df):
+    plant_locations = sales_df['Plant'].unique()
+    
+    for plant in plant_locations:
+        data = sales_df[sales_df['Plant'] == plant]
+        
+        plt.figure(figsize=(10, 6))
+        plt.bar(data['Year'], data['TotalSales'], color='skyblue')
+        plt.title(f'Yearly Sales Trend for Plant: {plant}')
+        plt.xlabel('Year')
+        plt.ylabel('Total Sales')
+        plt.xticks(data['Year'])
+        plt.grid(True)
+        plt.show()
+
+plot_yearly_sales_trend_by_plant(yearly_sales_by_plant)
