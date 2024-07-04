@@ -1,0 +1,91 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy as sp
+import io
+
+df = pd.read_csv("/content/MDirect_Orders_Report_.csv")
+df.head()
+
+df['Seller Id'].unique()
+df['Warehouse Id'].unique()
+df['Quantity'].unique()
+df['Size'].unique()
+df['Seller Warehouse Id'].unique()
+
+top_costly_products_filtered = df[['Seller SKU Code', 'Style ID', 'Quantity', 'Final Amount']]
+
+top_costly_products_filtered
+
+total_revenue_per_seller = df.groupby('Seller Id')['Final Amount'].sum().reset_index()
+total_revenue_per_seller
+total_revenue_per_seller.columns = ['Seller Id', 'Total Revenue']
+
+total_revenue_per_seller
+
+average_discount_per_seller = df.groupby('Seller Id')['Discount'].mean().reset_index()
+average_discount_per_seller.columns = ['Seller Id', 'Average Discount']
+
+average_discount_per_seller
+
+total_coupon_discount_per_product = df.groupby('Seller SKU Code')['Coupon Discount'].sum().reset_index()
+top_5_coupon_discount_products = total_coupon_discount_per_product.sort_values(by='Coupon Discount', ascending=False).head(5)
+
+top_5_coupon_discount_products
+
+plt.figure(figsize=(10, 6))
+plt.bar(top_5_coupon_discount_products['Seller SKU Code'], top_5_coupon_discount_products['Coupon Discount'], color='skyblue')
+plt.xlabel('Seller SKU Code')
+plt.ylabel('Total Coupon Discount')
+plt.title('Top 5 Products with Highest Coupon Discount Usage')
+plt.xticks(rotation=45)
+plt.show()
+
+total_revenue_per_city = df.groupby('City')['Final Amount'].sum().reset_index()
+total_revenue_per_city.columns = ['City', 'Total Revenue']
+total_revenue_per_city_sorted = total_revenue_per_city.sort_values(by='Total Revenue', ascending=False)
+top_5_cities = total_revenue_per_city_sorted.head(5)
+
+total_revenue_per_city
+total_revenue_per_city_sorted
+top_5_cities
+
+total_revenue_per_city = df.groupby('City')['Final Amount'].sum().reset_index()
+top_5_revenue_cities = total_revenue_per_city.sort_values(by='Final Amount', ascending=False).head(5)
+total_revenue_per_city
+top_5_revenue_cities
+plt.figure(figsize=(10, 7))
+plt.pie(top_5_revenue_cities ['Final Amount'], labels=top_5_revenue_cities ['City'], autopct='%1.1f%%', startangle=140, colors=['#ff9999','#66b3ff','#99ff99','#ffcc99', '#c2c2f0'])
+plt.title('Top 5 Cities Generating Highest Revenue')
+plt.show()
+
+total_revenue_per_state = df.groupby('State')['Final Amount'].sum().reset_index()
+total_revenue_per_state.columns = ['State', 'Total Revenue']
+total_revenue_per_state_sorted = total_revenue_per_state.sort_values(by='Total Revenue', ascending=False)
+
+top_5_states = total_revenue_per_state_sorted.head(5)
+
+total_revenue_per_state
+top_5_states
+
+plt.figure(figsize=(14, 8))
+plt.bar(total_revenue_per_state_sorted['State'], total_revenue_per_state_sorted['Total Revenue'], color='skyblue')
+plt.xlabel('State')
+plt.ylabel('Total Revenue')
+plt.title('Revenue Distribution Across Different States')
+plt.xticks(rotation=45)
+plt.show()
+
+total_revenue_per_state = df.groupby('State')['Final Amount'].sum().reset_index()
+lowest_5_revenue_states = total_revenue_per_state.sort_values(by='Final Amount', ascending=True).head(5)
+
+lowest_5_revenue_states
+
+plt.figure(figsize=(12, 8))
+plt.bar(lowest_5_revenue_states['State'], lowest_5_revenue_states['Final Amount'], color='skyblue')
+plt.xlabel('State')
+plt.ylabel('Total Revenue')
+plt.title('Lowest 5 Revenue-Generating States')
+plt.xticks(rotation=45)
+plt.show()
